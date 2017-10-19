@@ -1,8 +1,8 @@
 ﻿/*! \file Ar_moleculardynamics.h
-    \brief アルゴンに対して、分子動力学シミュレーションを行うクラスの宣言
+\brief アルゴンに対して、分子動力学シミュレーションを行うクラスの宣言
 
-    Copyright ©  2015 @dc1394 All Rights Reserved.
-    This software is released under the BSD 2-Clause License.
+Copyright ©  2017 @dc1394 All Rights Reserved.
+This software is released under the BSD 2-Clause License.
 */
 
 #ifndef _AR_MOLECULARDYNAMICS_H_
@@ -16,6 +16,7 @@
 #include <vector>                               // for std::vector
 #include <boost/align/aligned_allocator.hpp>    // for boost::alignment::aligned_allocator
 #include <Eigen/Core>                           // for Eigen::Vector4d
+#include <tbb/concurrent_vector.h>
 
 namespace moleculardynamics {
     using namespace utility;
@@ -77,7 +78,7 @@ namespace moleculardynamics {
             格子定数を求める
         */
         double getLatticeconst() const;
-        
+
         //! A public member function (constant).
         /*!
             周期境界条件の長さを求める
@@ -89,7 +90,7 @@ namespace moleculardynamics {
             計算された圧力を求める
         */
         double getPressure() const;
-        
+
         //! A public member function (constant).
         /*!
             計算された温度の絶対温度を求める
@@ -101,7 +102,7 @@ namespace moleculardynamics {
             与えた温度の絶対温度を求める
         */
         double getTgiven() const;
-                
+
         //! A oublic member function.
         /*!
             再計算する
@@ -149,18 +150,24 @@ namespace moleculardynamics {
     private:
         //! A private member function.
         /*!
-            ？？
-            \param dx
-            \param dy
-            \param dz
+            周期的境界条件の補正をする
+            \param dx x方向の補正
+            \param dy y方向の補正
+            \param dz z方向の補正
         */
         void adjust_periodic(double & dx, double & dy, double & dz);
-        
+
         //! A private member function.
         /*!
             原子に働く力を計算する
         */
-        void calcForces();
+        void calcForcePair();
+
+        //! A private member function.
+        /*!
+            ペアリストの寿命をチェックする
+        */
+        void checkPairlist();
 
         //! A private member function.
         /*!
@@ -169,7 +176,13 @@ namespace moleculardynamics {
             \return Hartree単位で表されたエネルギー
         */
         double DimensionlessToHartree(double e) const;
-        
+
+        //! A private member function.
+        /*!
+            ペアリストを構築する
+        */
+        void makePair();
+
         //! A private member function.
         /*!
             原子の初期位置を決める
@@ -199,7 +212,7 @@ namespace moleculardynamics {
             周期境界条件を用いて、原子の位置を補正する
         */
         void periodic();
-        
+
         // #endregion privateメンバ関数
 
         // #region プロパティ
@@ -216,7 +229,7 @@ namespace moleculardynamics {
             MDのステップ数へのプロパティ
         */
         Property<std::int32_t> const MD_iter;
-        
+
         //! A property.
         /*!
             スーパーセルの個数へのプロパティ
@@ -234,7 +247,7 @@ namespace moleculardynamics {
             格子定数へのプロパティ
         */
         Property<double> const periodiclen;
-        
+
         //! A property.
         /*!
             運動エネルギーへのプロパティ
@@ -246,7 +259,7 @@ namespace moleculardynamics {
             ポテンシャルエネルギーへのプロパティ
         */
         Property<double> const Up;
-        
+
         //! A property.
         /*!
             全エネルギーへのプロパティ
@@ -275,7 +288,7 @@ namespace moleculardynamics {
             初期温度（絶対温度）
         */
         static double const FIRSTTEMP;
-        
+
         //! A public member variable (constant).
         /*!
             アルゴン原子に対するσ
@@ -312,18 +325,36 @@ namespace moleculardynamics {
             時間刻みΔt
         */
         static double const DT;
-        
+
         //! A private member variable (constant).
         /*!
             1Hartree
         */
         static double const HARTREE;
-        
+
         //! A private member variable (constant).
         /*!
             ボルツマン定数
         */
         static double const KB;
+
+        //! A private member variable (constant).
+        /*!
+            マージン
+        */
+        static double const MARGIN;
+
+        //! A private member variable (constant).
+        /*!
+            マージンと、マージンのカットオフの和の平方
+        */
+        static double const ML2;
+
+        //! A private member variable (constant).
+        /*!
+            カットオフ半径
+        */
+        static double const RCUTOFF;
 
         //! A private member variable (constant).
         /*!
@@ -342,7 +373,7 @@ namespace moleculardynamics {
             スーパーセルの個数
         */
         std::int32_t Nc_ = Ar_moleculardynamics::FIRSTNC;
-        
+
         //! A private member variable.
         /*!
             原子の可変長配列
@@ -366,7 +397,13 @@ namespace moleculardynamics {
             格子定数
         */
         double lat_;
-                
+
+        //! A private member variable.
+        /*!
+            ペアリストの寿命の長さ
+        */
+        double margin_length_;
+
         //! A private member variable.
         /*!
             MDのステップ数
@@ -378,24 +415,24 @@ namespace moleculardynamics {
             相互作用を計算するセルの個数
         */
         std::int32_t const ncp_ = 3;
-        
+
         //! A private member variable.
         /*!
             原子数
         */
         std::int32_t NumAtom_;
-        
+
+        //! A private member variable.
+        /*!
+            ペアリスト
+        */
+        tbb::concurrent_vector<std::pair<std::int32_t, std::int32_t> > pairs_;
+
         //! A private member variable.
         /*!
             周期境界条件の長さ
         */
         double periodiclen_;
-
-        //! A private member variable (constant).
-        /*!
-            カットオフ半径
-        */
-        double const rc_ = 2.5;
 
         //! A private member variable (constant).
         /*!
@@ -420,10 +457,10 @@ namespace moleculardynamics {
             格子定数のスケーリングの定数
         */
         double scale_ = Ar_moleculardynamics::FIRSTSCALE;
-        
+
         //! A private member variable.
         /*!
-            時間    
+            時間
         */
         double t_;
 
@@ -438,7 +475,7 @@ namespace moleculardynamics {
             与える温度Tgiven
         */
         double Tg_;
-        
+
         //! A private member variable (constant).
         /*!
             運動エネルギー
@@ -468,7 +505,7 @@ namespace moleculardynamics {
             ポテンシャルエネルギーの打ち切り
         */
         double const Vrc_;
-                
+
         // #endregion メンバ変数
 
         // #region 禁止されたコンストラクタ・メンバ関数
