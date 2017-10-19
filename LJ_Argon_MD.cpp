@@ -822,7 +822,7 @@ void SetUI()
         125,
         22,
         1,
-        11,
+        16,
         moleculardynamics::Ar_moleculardynamics::FIRSTNC);
 
     // アンサンブルの変更

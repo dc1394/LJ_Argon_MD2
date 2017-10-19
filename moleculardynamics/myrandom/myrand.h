@@ -10,15 +10,17 @@
 
 #pragma once
 
-#include <cstdint>  // for std::uint_least32_t
-#include <random>   // for std::mt19937
-#include <vector>   // for std::vector
+#include <cstdint>                      // for std::uint_least32_t
+#include <random>                       // for std::mt19937
+#include <vector>                       // for std::vector
+#include <boost/range/algorithm.hpp>    // for boost::generate
 
 namespace myrandom {
     //! A class.
     /*!
         自作乱数クラス
     */
+    template <typename Distribution>
     class MyRand final {
         // #region コンストラクタ・デストラクタ
 
@@ -26,10 +28,9 @@ namespace myrandom {
         //! A constructor.
         /*!
             唯一のコンストラクタ
-            \param min 乱数分布の最小値
-            \param max 乱数分布の最大値
+            \param distribution 乱数の分布
         */
-        MyRand(double min, double max);
+        explicit MyRand(Distribution const & distribution);
 
         //! A destructor.
         /*!
@@ -59,13 +60,13 @@ namespace myrandom {
         /*!
             初期乱数生成用のstd::vectorのサイズ
         */
-        static std::vector<std::uint_least32_t>::size_type const SIZE = 64;
+        static std::vector<std::uint_least32_t>::size_type const SIZE = 8;
 
         //! A private member variable.
         /*!
             乱数の分布
         */
-        std::uniform_real_distribution<double> distribution_;
+        Distribution distribution_;
         
         //! A private member variable.
         /*!
@@ -97,6 +98,25 @@ namespace myrandom {
 
         // #endregion 禁止されたコンストラクタ・メンバ関数
     };
+
+    template <typename Distribution>
+    MyRand<Distribution>::MyRand(Distribution const & distribution)
+        : distribution_(distribution)
+    {
+        // ランダムデバイス
+        std::random_device rnd;
+
+        // 初期化用ベクタ
+        std::vector<std::uint_least32_t> v(SIZE);
+
+        // ベクタの初期化
+        boost::generate(v, std::ref(rnd));
+
+        std::seed_seq seq(v.begin(), v.end());
+
+        // 乱数エンジン
+        randengine_ = std::mt19937(seq);
+    }
 }
 
 #endif  // _MYRAND_H_

@@ -122,13 +122,13 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
-      <GenerateAlternateCodePaths>AVX2</GenerateAlternateCodePaths>
-      <UseProcessorExtensions>AVX2</UseProcessorExtensions>
       <Cpp0xSupport>true</Cpp0xSupport>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <LoopUnrolling>4</LoopUnrolling>
       <Parallelization>true</Parallelization>
       <Optimization>MaxSpeedHighLevel</Optimization>
+      <GenerateAlternateCodePaths>AVX2</GenerateAlternateCodePaths>
+      <UseProcessorExtensions>AVX2</UseProcessorExtensions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -138,11 +138,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Ar_moleculardynamics.h" />
+    <ClInclude Include="meshlist.h" />
     <ClInclude Include="myrandom\myrand.h" />
+    <ClInclude Include="systemparam.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ar_moleculardynamics.cpp" />
-    <ClCompile Include="myrandom\myrand.cpp" />
+    <ClCompile Include="meshlist.cpp" />
+    <ClCompile Include="systemparam.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

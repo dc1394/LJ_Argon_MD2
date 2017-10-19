@@ -1,8 +1,8 @@
 ﻿/*! \file Ar_moleculardynamics.h
-\brief アルゴンに対して、分子動力学シミュレーションを行うクラスの宣言
+    \brief アルゴンに対して、分子動力学シミュレーションを行うクラスの宣言
 
-Copyright ©  2017 @dc1394 All Rights Reserved.
-This software is released under the BSD 2-Clause License.
+    Copyright ©  2017 @dc1394 All Rights Reserved.
+    This software is released under the BSD 2-Clause License.
 */
 
 #ifndef _AR_MOLECULARDYNAMICS_H_
@@ -11,12 +11,11 @@ This software is released under the BSD 2-Clause License.
 #pragma once
 
 #include "../utility/property.h"
+#include "meshlist.h"
+#include "systemparam.h"
 #include <cstdint>                              // for std::int32_t
-#include <utility>                              // for std::pair
-#include <vector>                               // for std::vector
-#include <boost/align/aligned_allocator.hpp>    // for boost::alignment::aligned_allocator
-#include <Eigen/Core>                           // for Eigen::Vector4d
-#include <tbb/concurrent_vector.h>
+#include <memory>                               // for std::unique_ptr
+#include <tbb/concurrent_vector.h>              // for tbb::concurrent_vector
 
 namespace moleculardynamics {
     using namespace utility;
@@ -24,17 +23,6 @@ namespace moleculardynamics {
     enum class EnsembleType : std::int32_t {
         NVE = 0,
         NVT = 1
-    };
-
-    //! A struct.
-    /*!
-        原子の情報が格納された構造体
-    */
-    #pragma pack(16)
-    struct Atom {
-        Eigen::Vector4d f;
-        Eigen::Vector4d p;
-        Eigen::Vector4d r;
     };
 
     //! A class.
@@ -155,7 +143,7 @@ namespace moleculardynamics {
             \param dy y方向の補正
             \param dz z方向の補正
         */
-        void adjust_periodic(double & dx, double & dy, double & dz);
+        inline void adjust_periodic(double & dx, double & dy, double & dz);
 
         //! A private member function.
         /*!
@@ -222,7 +210,7 @@ namespace moleculardynamics {
         /*!
             原子へのプロパティ
         */
-        Property<std::vector<Atom, boost::alignment::aligned_allocator<Atom> > const &> const Atoms;
+        Property<SystemParam::myatomvector const &> const Atoms;
 
         //! A property.
         /*!
@@ -275,7 +263,7 @@ namespace moleculardynamics {
         /*!
             初期のスーパーセルの個数
         */
-        static auto const FIRSTNC = 4;
+        static auto const FIRSTNC = 6;
 
         //! A public member variable (constant).
         /*!
@@ -340,24 +328,6 @@ namespace moleculardynamics {
 
         //! A private member variable (constant).
         /*!
-            マージン
-        */
-        static double const MARGIN;
-
-        //! A private member variable (constant).
-        /*!
-            マージンと、マージンのカットオフの和の平方
-        */
-        static double const ML2;
-
-        //! A private member variable (constant).
-        /*!
-            カットオフ半径
-        */
-        static double const RCUTOFF;
-
-        //! A private member variable (constant).
-        /*!
             アルゴン原子に対するτ
         */
         static double const TAU;
@@ -378,7 +348,7 @@ namespace moleculardynamics {
         /*!
             原子の可変長配列
         */
-        std::vector<Atom, boost::alignment::aligned_allocator<Atom> > atoms_;
+        SystemParam::myatomvector atoms_;
 
         //! A private member variable (constant).
         /*!
@@ -398,11 +368,15 @@ namespace moleculardynamics {
         */
         double lat_;
 
+        std::int32_t m_;
+
         //! A private member variable.
         /*!
             ペアリストの寿命の長さ
         */
         double margin_length_;
+
+        std::unique_ptr<MeshList> pmesh_;
 
         //! A private member variable.
         /*!
@@ -426,7 +400,7 @@ namespace moleculardynamics {
         /*!
             ペアリスト
         */
-        tbb::concurrent_vector<std::pair<std::int32_t, std::int32_t> > pairs_;
+        tbb::concurrent_vector<SystemParam::mypair> pairs_;
 
         //! A private member variable.
         /*!
