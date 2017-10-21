@@ -92,16 +92,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LJ_Argon_MD.cpp" />
+    <Text Include="document\readme.txt">
+      <Filter>document</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="LJ_Argon_MD.rc">
+    <ResourceCompile Include="LJ_Argon_MD2.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="document\readme.txt">
-      <Filter>document</Filter>
-    </Text>
+    <ClCompile Include="LJ_Argon_MD2.cpp" />
   </ItemGroup>
 </Project>

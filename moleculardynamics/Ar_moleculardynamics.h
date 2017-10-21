@@ -13,17 +13,38 @@
 #include "../utility/property.h"
 #include "meshlist.h"
 #include "systemparam.h"
-#include <cstdint>                              // for std::int32_t
-#include <memory>                               // for std::unique_ptr
-#include <tbb/concurrent_vector.h>              // for tbb::concurrent_vector
+#include <cstdint>                  // for std::int32_t
+#include <memory>                   // for std::unique_ptr
 
 namespace moleculardynamics {
     using namespace utility;
 
+    //! A enum.
+    /*!
+        アンサンブルのタイプの列挙型
+    */
     enum class EnsembleType : std::int32_t {
+        // NVEアンサンブル
         NVE = 0,
+
+        // NVTアンサンブル
         NVT = 1
     };
+
+    //! A enum.
+    /*!
+        温度制御の方法の列挙型
+    */
+    enum class TempControlType : std::int32_t {
+        // Langevin法
+        LANGEVIN = 0,
+
+        // Nose-Hoover法
+        NOSE_HOOVER = 1,
+
+        // Woodcockの速度スケーリング法
+        VELOCITY = 2
+    };;
 
     //! A class.
     /*!
@@ -138,15 +159,6 @@ namespace moleculardynamics {
     private:
         //! A private member function.
         /*!
-            周期的境界条件の補正をする
-            \param dx x方向の補正
-            \param dy y方向の補正
-            \param dz z方向の補正
-        */
-        inline void adjust_periodic(double & dx, double & dy, double & dz);
-
-        //! A private member function.
-        /*!
             原子に働く力を計算する
         */
         void calcForcePair();
@@ -164,6 +176,12 @@ namespace moleculardynamics {
             \return Hartree単位で表されたエネルギー
         */
         double DimensionlessToHartree(double e) const;
+
+        //! A private member function.
+        /*!
+            Langevin法
+        */
+        void Langevin();
 
         //! A private member function.
         /*!
@@ -200,6 +218,12 @@ namespace moleculardynamics {
             周期境界条件を用いて、原子の位置を補正する
         */
         void periodic();
+        
+        //! A private member function.
+        /*!
+            Woodcockの速度スケーリング法
+        */
+        void Woodcock_velocity_scaling();
 
         // #endregion privateメンバ関数
 
@@ -238,6 +262,12 @@ namespace moleculardynamics {
 
         //! A property.
         /*!
+            温度制御の方法へのプロパティ
+        */
+        Property<TempControlType> tempcon;
+
+        //! A property.
+        /*!
             運動エネルギーへのプロパティ
         */
         Property<double> const Uk;
@@ -259,86 +289,92 @@ namespace moleculardynamics {
         // #region メンバ変数
 
     public:
-        //! A public member variable (constant).
+        //! A public member variable (static constant).
         /*!
             初期のスーパーセルの個数
         */
         static auto const FIRSTNC = 6;
 
-        //! A public member variable (constant).
+        //! A public member variable (static consttant).
         /*!
             初期の格子定数のスケール
         */
         static double const FIRSTSCALE;
 
-        //! A public member variable (constant).
+        //! A public member variable (static constant).
         /*!
             初期温度（絶対温度）
         */
         static double const FIRSTTEMP;
 
-        //! A public member variable (constant).
+        //! A public member variable (static constant).
         /*!
             アルゴン原子に対するσ
         */
         static double const SIGMA;
 
-        //! A public member variable (constant).
+        //! A public member variable (static constant).
         /*!
             アルゴン原子のVan der Waals半径
         */
         static double const VDW_RADIUS;
 
     private:
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             Woodcockの温度スケーリングの係数
         */
         static double const ALPHA;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             標準気圧
         */
         static double const ATM;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             アボガドロ定数
         */
         static double const AVOGADRO_CONSTANT;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             時間刻みΔt
         */
         static double const DT;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
+        /*!
+            Langevin法の定数
+        */
+        static double const GAMMA;
+
+        //! A private member variable (static constant).
         /*!
             1Hartree
         */
         static double const HARTREE;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             ボルツマン定数
         */
         static double const KB;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             アルゴン原子に対するτ
         */
         static double const TAU;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             アルゴン原子に対するε
         */
         static double const YPSILON;
 
-        //! A private member variable (constant).
+        //! A private member variable (static constant).
         /*!
             スーパーセルの個数
         */
@@ -367,7 +403,11 @@ namespace moleculardynamics {
             格子定数
         */
         double lat_;
-
+        
+        //! A private member variable.
+        /*!
+            一辺のメッシュの数
+        */
         std::int32_t m_;
 
         //! A private member variable.
@@ -375,8 +415,6 @@ namespace moleculardynamics {
             ペアリストの寿命の長さ
         */
         double margin_length_;
-
-        std::unique_ptr<MeshList> pmesh_;
 
         //! A private member variable.
         /*!
@@ -392,6 +430,12 @@ namespace moleculardynamics {
 
         //! A private member variable.
         /*!
+            メッシュのリストへのスマートポインタ
+        */
+        std::unique_ptr<MeshList> pmesh_;
+        
+        //! A private member variable.
+        /*!
             原子数
         */
         std::int32_t NumAtom_;
@@ -400,8 +444,8 @@ namespace moleculardynamics {
         /*!
             ペアリスト
         */
-        tbb::concurrent_vector<SystemParam::mypair> pairs_;
-
+        SystemParam::mypairvector pairs_;
+        
         //! A private member variable.
         /*!
             周期境界条件の長さ
@@ -444,6 +488,12 @@ namespace moleculardynamics {
         */
         double Tc_;
 
+        //! A private member variable.
+        /*!
+            温度制御の方法
+        */
+        TempControlType tempcon_ = TempControlType::VELOCITY;
+        
         //! A private member variable.
         /*!
             与える温度Tgiven

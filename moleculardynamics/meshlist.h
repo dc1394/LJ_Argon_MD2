@@ -8,11 +8,16 @@
 #ifndef _MESHLIST_H_
 #define _MESHLIST_H_
 
+#pragma once
+
 #include "systemparam.h"
-#include <cstdint>                          // for std::int32_t
-#include <tbb/concurrent_vector.h>			// for tbb::concurrent_vector
+#include <cstdint>          // for std::int32_t
 
 namespace moleculardynamics {
+    //! A class.
+    /*!
+        メッシュリストクラス    
+    */
     class MeshList final {
     private:
         double mesh_size;
@@ -22,14 +27,12 @@ namespace moleculardynamics {
         std::vector<std::int32_t> count;
         std::vector<std::int32_t> indexes;
         std::vector<std::int32_t> sorted_buffer;
-        void search(std::int32_t index, SystemParam::myatomvector & atoms, tbb::concurrent_vector<SystemParam::mypair> & pairs);
-        void search_other(std::int32_t id, std::int32_t ix, std::int32_t iy, std::int32_t iz, SystemParam::myatomvector & atoms, tbb::concurrent_vector<SystemParam::mypair> & pairs);
+        void search(std::int32_t index, SystemParam::myatomvector & atoms, SystemParam::mypairvector & pairs);
+        void search_other(std::int32_t id, std::int32_t ix, std::int32_t iy, std::int32_t iz, SystemParam::myatomvector & atoms, SystemParam::mypairvector & pairs);
     public:
-        MeshList(double periodiclen);
-        void make_pair(SystemParam::myatomvector & atoms, tbb::concurrent_vector<SystemParam::mypair> &pairs);
-        void set_number_of_atoms(std::int32_t pn) {
-            sorted_buffer.resize(pn);
-        }
+        explicit MeshList(double periodiclen);
+        void make_pair(SystemParam::myatomvector & atoms, SystemParam::mypairvector & pairs);
+        void set_number_of_atoms(std::size_t pn) { sorted_buffer.resize(pn); }
     };
 }
 

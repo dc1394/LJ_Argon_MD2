@@ -8,9 +8,13 @@
 #include "systemparam.h"
 
 namespace moleculardynamics {
+    // #region static public 定数
+
     double const SystemParam::MARGIN = 0.75;
     
     double const SystemParam::ML2 = (SystemParam::RCUTOFF + SystemParam::MARGIN) * (SystemParam::RCUTOFF + SystemParam::MARGIN);
     
     double const SystemParam::RCUTOFF = 2.5;
+
+    // #endregion static public 定数
 }

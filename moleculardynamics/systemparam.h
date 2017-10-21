@@ -8,6 +8,8 @@
 #ifndef _SYSTEMPARAM_H_
 #define _SYSTEMPARAM_H_
 
+#pragma once
+
 #include <cstdint>                              // for std::int32_t
 #include <utility>                              // for std::pair
 #include <vector>                               // for std::vector
@@ -33,14 +35,20 @@ namespace moleculardynamics {
 	struct SystemParam {
         // #region 型エイリアス
 
-        using mypair = std::pair<std::int32_t, std::int32_t>;
-
         using myatomvector = std::vector<Atom, boost::alignment::aligned_allocator<Atom> >;
+
+        using mypairvector = std::vector<std::pair<std::int32_t, std::int32_t> >;
 
         // #endregion 型エイリアス
 
         // #region static publicメンバ関数
 
+        //! A public static member function.
+        /*!
+            周期的境界条件の補正をする
+            \param d x方向の補正
+            \param periodiclen 周期の長さ
+        */
         inline static void adjust_periodic(Eigen::Vector4d & d, double periodiclen);
 
         // #endregion static publicメンバ関数
@@ -68,6 +76,8 @@ namespace moleculardynamics {
         // #endregion publicメンバ変数
 	};
 
+    // #region publicメンバ関数の実装
+
     void SystemParam::adjust_periodic(Eigen::Vector4d & d, double periodiclen)
     {
         auto const LH = periodiclen * 0.5;
@@ -93,6 +103,8 @@ namespace moleculardynamics {
             d[2] -= periodiclen;
         }
     }
+
+    // #endregion publicメンバ関数の実装
 }
 
 #endif	// _SYSTEMPARAM_H_

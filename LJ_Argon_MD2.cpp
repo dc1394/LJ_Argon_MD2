@@ -19,7 +19,6 @@
 #include <boost/assert.hpp>                         // for BOOST_ASSERT
 #include <boost/cast.hpp>                           // for boost::numeric_cast
 #include <boost/format.hpp>                         // for boost::wformat
-#include <tbb/task_scheduler_init.h>                // for tbb::task_scheduler_init
 
 //! A function.
 /*!
@@ -101,12 +100,6 @@ static auto const WINDOWWIDTH = 1280;
     分子動力学シミュレーションのオブジェクト
 */
 moleculardynamics::Ar_moleculardynamics armd;
-
-//! A global variable.
-/*!
-    CPUのスレッド数
-*/
-auto const cputhread = tbb::task_scheduler_init::default_num_threads();
 
 //! A global variable.
 /*!
@@ -275,6 +268,9 @@ struct SimpleVertex
 #define IDC_SLIDER3             9
 #define IDC_RADIOA              10
 #define IDC_RADIOB              11
+#define IDC_RADIOC              12
+#define IDC_RADIOD              13
+#define IDC_RADIOE              14
 
 //--------------------------------------------------------------------------------------
 // Initialize the app 
@@ -431,7 +427,7 @@ HRESULT CALLBACK OnD3D10CreateDevice( ID3D10Device* pd3dDevice, const DXGI_SURFA
 
     // Find the D3DX effect file
     std::array<WCHAR, MAX_PATH> str;
-    V_RETURN( DXUTFindDXSDKMediaFileCch( str.data(), MAX_PATH, L"LJ_Argon_MD.fx" ) );
+    V_RETURN( DXUTFindDXSDKMediaFileCch( str.data(), MAX_PATH, L"LJ_Argon_MD2.fx" ) );
     auto dwShaderFlags = D3D10_SHADER_ENABLE_STRICTNESS;
 
 #if defined( DEBUG ) || defined( _DEBUG )
@@ -575,6 +571,14 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 
     case IDC_RADIOB:
         armd.setEnsemble(moleculardynamics::EnsembleType::NVE);
+        break;
+
+    case IDC_RADIOC:
+        armd.tempcon(moleculardynamics::TempControlType::LANGEVIN);
+        break;
+
+    case IDC_RADIOE:
+        armd.tempcon(moleculardynamics::TempControlType::VELOCITY);
         break;
 
     default:
@@ -751,7 +755,6 @@ void RenderText(ID3D10Device* pd3dDevice)
     txthelper->SetForegroundColor(D3DXCOLOR(1.000f, 0.945f, 0.059f, 1.000f));
     txthelper->DrawTextLine(DXUTGetFrameStats(DXUTIsVsyncEnabled()));
     txthelper->DrawTextLine(DXUTGetDeviceStats());
-    txthelper->DrawTextLine((boost::wformat(L"CPUスレッド数: %d") % cputhread).str().c_str());
     txthelper->DrawTextLine((boost::wformat(L"原子数: %d") % armd.NumAtom).str().c_str());
     txthelper->DrawTextLine((boost::wformat(L"スーパーセルの個数: %d") % armd.Nc).str().c_str());
     txthelper->DrawTextLine((boost::wformat(L"MDのステップ数: %d") % armd.MD_iter).str().c_str());
@@ -826,8 +829,12 @@ void SetUI()
         moleculardynamics::Ar_moleculardynamics::FIRSTNC);
 
     // アンサンブルの変更
-    g_HUD.AddRadioButton(IDC_RADIOA, 1, L"NVTアンサンブル", 35, iY += 34, 125, 22, true, L'1');
+    g_HUD.AddRadioButton(IDC_RADIOA, 1, L"NVTアンサンブル", 35, iY += 40, 125, 22, true, L'1');
     g_HUD.AddRadioButton(IDC_RADIOB, 1, L"NVEアンサンブル", 35, iY += 28, 125, 22, false, L'2');
+
+    // 温度制御法の変更
+    g_HUD.AddRadioButton(IDC_RADIOC, 1, L"Langevin法", 35, iY += 40, 125, 22, false, L'3');
+    g_HUD.AddRadioButton(IDC_RADIOE, 1, L"速度スケーリング法", 35, iY += 28, 125, 22, true, L'4');
 }
 
 //--------------------------------------------------------------------------------------

@@ -9,9 +9,6 @@ This software is released under the BSD 2-Clause License.
 #include "myrandom/myrand.h"
 #include <cmath>                    // for std::sqrt, std::pow
 #include <random>                   // for std::uniform_real_distribution
-#include <boost/assert.hpp>         // for BOOST_ASSERT
-#include <tbb/combinable.h>         // for tbb::combinable
-#include <tbb/parallel_for.h>       // for tbb::parallel_for
 
 namespace moleculardynamics {
     // #region static private 定数
@@ -30,7 +27,9 @@ namespace moleculardynamics {
 
     double const Ar_moleculardynamics::AVOGADRO_CONSTANT = 6.022140857E+23;
 
-    double const Ar_moleculardynamics::DT = 0.0001;
+    double const Ar_moleculardynamics::DT = 0.001;
+
+    double const Ar_moleculardynamics::GAMMA = 1.0;
 
     double const Ar_moleculardynamics::HARTREE = 4.35974465054E-18;
 
@@ -52,6 +51,7 @@ namespace moleculardynamics {
         Nc([this] { return Nc_; }, nullptr),
         NumAtom([this] { return NumAtom_; }, nullptr),
         periodiclen([this] { return periodiclen_; }, nullptr),
+        tempcon(nullptr, [this](TempControlType tempcon) { return tempcon_ = tempcon; }),
         Uk([this] { return DimensionlessToHartree(Uk_); }, nullptr),
         Up([this] { return DimensionlessToHartree(Up_); }, nullptr),
         Utot([this] { return DimensionlessToHartree(Utot_); }, nullptr),
@@ -72,20 +72,7 @@ namespace moleculardynamics {
     // #endregion コンストラクタ
 
     // #region publicメンバ関数
-
-    void Ar_moleculardynamics::runCalc()
-    {
-        moveAtoms();
-        checkPairlist();
-        calcForcePair();
-        moveAtoms();
-        periodic();
-
-        // 繰り返し回数と時間を増加
-        t_ = static_cast<double>(MD_iter_)* Ar_moleculardynamics::DT;
-        MD_iter_++;
-    }
-
+        
     double Ar_moleculardynamics::getDeltat() const
     {
         return Ar_moleculardynamics::TAU * t_ * 1.0E+12;
@@ -147,6 +134,19 @@ namespace moleculardynamics {
         }
     }
 
+    void Ar_moleculardynamics::runCalc()
+    {
+        moveAtoms();
+        checkPairlist();
+        calcForcePair();
+        moveAtoms();
+        periodic();
+
+        // 繰り返し回数と時間を増加
+        t_ = static_cast<double>(MD_iter_)* Ar_moleculardynamics::DT;
+        MD_iter_++;
+    }
+
     void Ar_moleculardynamics::setEnsemble(EnsembleType ensemble)
     {
         ensemble_ = ensemble;
@@ -183,41 +183,37 @@ namespace moleculardynamics {
             a.f = Eigen::Vector4d::Zero();
         }
 
-        tbb::combinable<double> Up;
-        tbb::combinable<double> virial;
+        // ポテンシャルエネルギーの初期化
+        Up_ = 0.0;
 
-        tbb::parallel_for(
-            tbb::blocked_range<std::int32_t>(0, pairs_.size()),
-            [this, &Up, &virial](tbb::blocked_range<std::int32_t> const & range) {
-            for (auto && k = range.begin(); k != range.end(); ++k) {
-                auto const i = pairs_[k].first;
-                auto const j = pairs_[k].second;
-                Eigen::Vector4d d = atoms_[j].r - atoms_[i].r;
+        // ビリアルの初期化
+        virial_ = 0.0;
 
-                SystemParam::adjust_periodic(d, periodiclen_);
-                auto const r2 = d.squaredNorm();
+        for (auto k = 0; k < pairs_.size(); ++k) {
+            auto const i = pairs_[k].first;
+            auto const j = pairs_[k].second;
+            Eigen::Vector4d d = atoms_[j].r - atoms_[i].r;
 
-                if (r2 <= rc2_) {
-                    auto const r6 = r2 * r2 * r2;
-                    auto const dFdr = (24.0 * r6 - 48.0) / (r6 * r6 * r2);
+            SystemParam::adjust_periodic(d, periodiclen_);
+            auto const r2 = d.squaredNorm();
 
-                    atoms_[i].f += dFdr * d;
-                    atoms_[j].f -= dFdr * d;
+            if (r2 <= rc2_) {
+                auto const r6 = r2 * r2 * r2;
+                auto const dFdr = (24.0 * r6 - 48.0) / (r6 * r6 * r2);
 
-                    auto const df = dFdr * DT;
+                atoms_[i].f += dFdr * d;
+                atoms_[j].f -= dFdr * d;
 
-                    atoms_[i].p += df * d;
-                    atoms_[j].p -= df * d;
+                auto const df = dFdr * DT;
 
-                    auto const r12 = r6 * r6;
-                    Up.local() += 4.0 * (1.0 / r12 - 1.0 / r6) + Vrc_;
-                    virial.local() += r2 * dFdr;
-                }
+                atoms_[i].p += df * d;
+                atoms_[j].p -= df * d;
+
+                auto const r12 = r6 * r6;
+                Up_ += 4.0 * (1.0 / r12 - 1.0 / r6) + Vrc_;
+                virial_ += r2 * dFdr;
             }
-        });
-
-        Up_ = Up.combine(std::plus<double>());
-        virial_ = virial.combine(std::plus<double>());
+        }
     }
 
     void Ar_moleculardynamics::checkPairlist()
@@ -250,25 +246,34 @@ namespace moleculardynamics {
         return e * Ar_moleculardynamics::YPSILON / Ar_moleculardynamics::HARTREE;
     }
 
+    void Ar_moleculardynamics::Langevin()
+    {
+        auto const D = std::sqrt(2.0 * Ar_moleculardynamics::GAMMA * Tg_ / DT);
+
+        std::normal_distribution<double> nd(0.0, D);
+        myrandom::MyRand<std::normal_distribution<double> > mr(nd);
+        for (auto && atom : atoms_) {
+            atom.p[0] += (-Ar_moleculardynamics::GAMMA * atom.p[0] + mr.myrand()) * DT;
+            atom.p[1] += (-Ar_moleculardynamics::GAMMA * atom.p[1] + mr.myrand()) * DT;
+            atom.p[2] += (-Ar_moleculardynamics::GAMMA * atom.p[2] + mr.myrand()) * DT;
+        }
+    }
+
     void Ar_moleculardynamics::makePair()
     {
         pairs_.clear();
 
-        tbb::parallel_for(
-            tbb::blocked_range<std::int32_t>(0, NumAtom_ - 1),
-            [this](tbb::blocked_range<std::int32_t> const & range) {
-            for (auto && i = range.begin(); i != range.end(); ++i) {
-                for (auto j = i + 1; j < NumAtom_; j++) {
-                    Eigen::Vector4d d = atoms_[j].r - atoms_[i].r;
+        for (auto i = 0; i < NumAtom_ - 1; i++) {
+            for (auto j = i + 1; j < NumAtom_; j++) {
+                Eigen::Vector4d d = atoms_[j].r - atoms_[i].r;
 
-                    SystemParam::adjust_periodic(d, periodiclen_);
+                SystemParam::adjust_periodic(d, periodiclen_);
 
-                    if (d.squaredNorm() <= rc2_) {
-                        pairs_.push_back(std::make_pair(i, j));
-                    }
+                if (d.squaredNorm() <= rc2_) {
+                    pairs_.push_back(std::make_pair(i, j));
                 }
             }
-        });
+        }
     }
 
     void Ar_moleculardynamics::MD_initPos()
@@ -304,22 +309,16 @@ namespace moleculardynamics {
 
         // move the center of mass to the origin
         // 系の重心を座標系の原点とする
-        sx = 0.0;
-        sy = 0.0;
-        sz = 0.0;
+        Eigen::Vector4d s(0.0, 0.0, 0.0, 0.0);
 
-        for (auto n = 0; n < NumAtom_; n++) {
-            sx += atoms_[n].r[0];
-            sy += atoms_[n].r[1];
-            sz += atoms_[n].r[2];
+        for (auto && atom : atoms_) {
+            s += atom.r;
         }
 
-        sx /= static_cast<double>(NumAtom_);
-        sy /= static_cast<double>(NumAtom_);
-        sz /= static_cast<double>(NumAtom_);
+        s /= static_cast<double>(NumAtom_);
 
         for (auto n = 0; n < NumAtom_; n++) {
-            atoms_[n].r -= Eigen::Vector4d(sx, sy, sz, 0.0);
+            atoms_[n].r -= s;
         }
     }
 
@@ -378,41 +377,34 @@ namespace moleculardynamics {
 
         switch (ensemble_) {
         case EnsembleType::NVE:
-            {
-                tbb::parallel_for(
-                    tbb::blocked_range<std::int32_t>(0, NumAtom_),
-                    [this](tbb::blocked_range<std::int32_t> const & range) {
-                    for (auto && n = range.begin(); n != range.end(); ++n) {
-                        atoms_[n].r += atoms_[n].p * DT * 0.5;
-                    }
-                });
-            }   
+            for (auto && atom : atoms_) {
+                atom.r += atom.p * DT * 0.5;
+            }
             break;
 
         case EnsembleType::NVT:
             {
-                //auto const s = std::sqrt((Tg_ + Ar_moleculardynamics::ALPHA * (Tc_ - Tg_)) / Tc_);
+                switch (tempcon_) {
+                case TempControlType::LANGEVIN:
+                {
+                    Langevin();
+                    goto SCALING;
+                }
+                break;
 
-                //tbb::parallel_for(
-                //    tbb::blocked_range<std::int32_t>(0, NumAtom_),
-                //    [this, s](tbb::blocked_range<std::int32_t> const & range) {
-                //    for (auto && n = range.begin(); n != range.end(); ++n) {
-                //        atoms_[n].p *= s;
-                //        atoms_[n].r += atoms_[n].p * DT * 0.5;
-                //    }
-                //});
-                
-                auto const gamma = 1.0;
-                auto const D = std::sqrt(2.0 * gamma * Tg_ / DT);
+                case TempControlType::VELOCITY:
+                {
+                    Woodcock_velocity_scaling();
+                    goto SCALING;
+                }
+                break;
 
-                std::normal_distribution<double> nd(0.0, D);
-                myrandom::MyRand<std::normal_distribution<double> > mr(nd);
-                for (auto && atom : atoms_) {
-                    atom.p[0] += (-gamma * atom.p[0] + mr.myrand()) * DT;
-                    atom.p[1] += (-gamma * atom.p[1] + mr.myrand()) * DT;
-                    atom.p[2] += (-gamma * atom.p[2] + mr.myrand()) * DT;
-
-                    atom.r += atom.p * DT * 0.5;
+                default:
+SCALING:
+                    for (auto && atom : atoms_) {
+                        atom.r += atom.p * DT * 0.5;
+                    }
+                    break;
                 }
             }
             break;
@@ -426,32 +418,37 @@ namespace moleculardynamics {
     {
         // consider the periodic boundary condination
         // セルの外側に出たら座標をセル内に戻す
-        tbb::parallel_for(
-            tbb::blocked_range<std::int32_t>(0, NumAtom_),
-            [this](tbb::blocked_range<std::int32_t> const & range) {
-            for (auto && n = range.begin(); n != range.end(); ++n) {
-                if (atoms_[n].r[0] > periodiclen_) {
-                    atoms_[n].r[0] -= periodiclen_;
-                }
-                else if (atoms_[n].r[0] < 0.0) {
-                    atoms_[n].r[0] += periodiclen_;
-                }
-
-                if (atoms_[n].r[1] > periodiclen_) {
-                    atoms_[n].r[1] -= periodiclen_;
-                }
-                else if (atoms_[n].r[1] < 0.0) {
-                    atoms_[n].r[1] += periodiclen_;
-                }
-
-                if (atoms_[n].r[2] > periodiclen_) {
-                    atoms_[n].r[2] -= periodiclen_;
-                }
-                else if (atoms_[n].r[2] < 0.0) {
-                    atoms_[n].r[2] += periodiclen_;
-                }
+        for (auto && atom : atoms_) {
+            if (atom.r[0] > periodiclen_) {
+                atom.r[0] -= periodiclen_;
             }
-        });
+            else if (atom.r[0] < 0.0) {
+                atom.r[0] += periodiclen_;
+            }
+
+            if (atom.r[1] > periodiclen_) {
+                atom.r[1] -= periodiclen_;
+            }
+            else if (atom.r[1] < 0.0) {
+                atom.r[1] += periodiclen_;
+            }
+
+            if (atom.r[2] > periodiclen_) {
+                atom.r[2] -= periodiclen_;
+            }
+            else if (atom.r[2] < 0.0) {
+                atom.r[2] += periodiclen_;
+            }
+        }
+    }
+
+    void Ar_moleculardynamics::Woodcock_velocity_scaling()
+    {
+        auto const s = std::sqrt((Tg_ + Ar_moleculardynamics::ALPHA * (Tc_ - Tg_)) / Tc_);
+
+        for (auto && atom : atoms_) {
+            atom.p *= s;
+        }
     }
 
     // #endregion privateメンバ関数

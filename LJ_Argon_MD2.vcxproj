@@ -300,7 +300,7 @@ copy document\readme.txt Release</Command>
       <TargetMachine>MachineX64</TargetMachine>
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>D:\DATA\Program\C++\DirectX\LJ_Argon_MD\x64\Release;C:\Program Files %28x86%29\IntelSWTools\compilers_and_libraries_2018.0.124\windows\compiler\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>x64\Release;C:\Program Files %28x86%29\IntelSWTools\compilers_and_libraries_2018.0.124\windows\compiler\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -310,7 +310,7 @@ copy document\readme.txt Release</Command>
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy LJ_Argon_MD.fx x64\Release
+      <Command>copy LJ_Argon_MD2.fx x64\Release
 
 copy document\readme.txt x64\Release</Command>
     </PostBuildEvent>
@@ -402,6 +402,7 @@ copy document\readme.txt x64\Release</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="LJ_Argon_MD2.cpp" />
     <ClInclude Include="utility\property.h" />
     <ClInclude Include="utility\utility.h" />
     <None Include="DXUT\Optional\directx.ico" />
@@ -429,16 +430,15 @@ copy document\readme.txt x64\Release</Command>
     <ClCompile Include="DXUT\Optional\DXUTShapes.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LJ_Argon_MD.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <CLInclude Include="resource.h" />
-    <ResourceCompile Include="LJ_Argon_MD.rc" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="document\readme.txt">
       <DeploymentContent>false</DeploymentContent>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="LJ_Argon_MD2.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
