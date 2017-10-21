@@ -1,8 +1,8 @@
 ﻿/*! \file Ar_moleculardynamics.h
-\brief アルゴンに対して、分子動力学シミュレーションを行うクラスの実装
+    \brief アルゴンに対して、分子動力学シミュレーションを行うクラスの実装
 
-Copyright ©  2015 @dc1394 All Rights Reserved.
-This software is released under the BSD 2-Clause License.
+    Copyright ©  2015 @dc1394 All Rights Reserved.
+    This software is released under the BSD 2-Clause License.
 */
 
 #include "Ar_moleculardynamics.h"
@@ -13,9 +13,9 @@ This software is released under the BSD 2-Clause License.
 namespace moleculardynamics {
     // #region static private 定数
 
-    double const Ar_moleculardynamics::FIRSTSCALE = 1.0;
+    double const Ar_moleculardynamics::FIRSTSCALE = 5.0;
 
-    double const Ar_moleculardynamics::FIRSTTEMP = 50.0;
+    double const Ar_moleculardynamics::FIRSTTEMP = 300.0;
 
     double const Ar_moleculardynamics::SIGMA = 3.405E-10;
 
@@ -37,6 +37,8 @@ namespace moleculardynamics {
 
     double const Ar_moleculardynamics::TAU =
         std::sqrt(0.039948 / Ar_moleculardynamics::AVOGADRO_CONSTANT * Ar_moleculardynamics::SIGMA * Ar_moleculardynamics::SIGMA / Ar_moleculardynamics::YPSILON);
+
+    double const Ar_moleculardynamics::TAU_NOSE_HOOVER = 0.1;
 
     double const Ar_moleculardynamics::YPSILON = 1.6540172624E-21;
 
@@ -418,8 +420,7 @@ namespace moleculardynamics {
 
     void Ar_moleculardynamics::NoseHoover()
     {
-        auto const tau = 0.1;
-        zeta_ += (Tc_ - Tg_) / (tau * tau) * DT;
+        zeta_ += (Tc_ - Tg_) / (Ar_moleculardynamics::TAU_NOSE_HOOVER * Ar_moleculardynamics::TAU_NOSE_HOOVER) * DT;
 
         for (auto && atom : atoms_){
             atom.p -= atom.p * zeta_ * DT;

@@ -300,7 +300,7 @@ namespace moleculardynamics {
         /*!
             初期のスーパーセルの個数
         */
-        static auto const FIRSTNC = 6;
+        static auto const FIRSTNC = 11;
 
         //! A public member variable (static consttant).
         /*!
@@ -378,6 +378,12 @@ namespace moleculardynamics {
             アルゴン原子に対するτ
         */
         static double const TAU;
+
+        //! A private member variable (static constant).
+        /*!
+            Nose-Hoover法の自由パラメータ
+        */
+        static double const TAU_NOSE_HOOVER;
 
         //! A private member variable (static constant).
         /*!
