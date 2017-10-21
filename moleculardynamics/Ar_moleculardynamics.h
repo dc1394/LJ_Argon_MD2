@@ -35,7 +35,7 @@ namespace moleculardynamics {
     /*!
         温度制御の方法の列挙型
     */
-    enum class TempControlType : std::int32_t {
+    enum class TempControlMethod : std::int32_t {
         // Langevin法
         LANGEVIN = 0,
 
@@ -147,6 +147,13 @@ namespace moleculardynamics {
 
         //! A public member function.
         /*!
+            温度制御の方法を設定する
+            \param tempcont 温度制御の方法
+        */
+        void setTempContMethod(TempControlMethod tempcontmethod);
+
+        //! A public member function.
+        /*!
             温度を設定する
             \param Tgiven 設定する温度（絶対温度）
         */
@@ -213,6 +220,12 @@ namespace moleculardynamics {
         */
         void moveAtoms();
 
+        //! A privte member function.
+        /*!
+            Nose-Hoover法
+        */
+        void NoseHoover();
+
         //! A private member function.
         /*!
             周期境界条件を用いて、原子の位置を補正する
@@ -259,12 +272,6 @@ namespace moleculardynamics {
             格子定数へのプロパティ
         */
         Property<double> const periodiclen;
-
-        //! A property.
-        /*!
-            温度制御の方法へのプロパティ
-        */
-        Property<TempControlType> tempcon;
 
         //! A property.
         /*!
@@ -448,6 +455,12 @@ namespace moleculardynamics {
         
         //! A private member variable.
         /*!
+            Nose-Hoover法の変数
+        */
+        double zeta_;
+
+        //! A private member variable.
+        /*!
             周期境界条件の長さ
         */
         double periodiclen_;
@@ -492,7 +505,7 @@ namespace moleculardynamics {
         /*!
             温度制御の方法
         */
-        TempControlType tempcon_ = TempControlType::VELOCITY;
+        TempControlMethod tempcontmethod_ = TempControlMethod::VELOCITY;
         
         //! A private member variable.
         /*!

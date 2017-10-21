@@ -51,7 +51,6 @@ namespace moleculardynamics {
         Nc([this] { return Nc_; }, nullptr),
         NumAtom([this] { return NumAtom_; }, nullptr),
         periodiclen([this] { return periodiclen_; }, nullptr),
-        tempcon(nullptr, [this](TempControlType tempcon) { return tempcon_ = tempcon; }),
         Uk([this] { return DimensionlessToHartree(Uk_); }, nullptr),
         Up([this] { return DimensionlessToHartree(Up_); }, nullptr),
         Utot([this] { return DimensionlessToHartree(Utot_); }, nullptr),
@@ -132,6 +131,8 @@ namespace moleculardynamics {
         else {
             makePair();
         }
+
+        zeta_ = 0.0;
     }
 
     void Ar_moleculardynamics::runCalc()
@@ -165,6 +166,12 @@ namespace moleculardynamics {
     {
         scale_ = scale;
         ModLattice();
+    }
+
+    void Ar_moleculardynamics::setTempContMethod(TempControlMethod tempcontmethod)
+    {
+        tempcontmethod_ = tempcontmethod;
+        zeta_ = 0.0;
     }
 
     void Ar_moleculardynamics::setTgiven(double Tgiven)
@@ -377,40 +384,45 @@ namespace moleculardynamics {
 
         switch (ensemble_) {
         case EnsembleType::NVE:
-            for (auto && atom : atoms_) {
-                atom.r += atom.p * DT * 0.5;
-            }
             break;
 
         case EnsembleType::NVT:
-            {
-                switch (tempcon_) {
-                case TempControlType::LANGEVIN:
-                {
-                    Langevin();
-                    goto SCALING;
-                }
+            switch (tempcontmethod_) {
+            case TempControlMethod::LANGEVIN:
+                Langevin();
                 break;
 
-                case TempControlType::VELOCITY:
-                {
-                    Woodcock_velocity_scaling();
-                    goto SCALING;
-                }
+            case TempControlMethod::NOSE_HOOVER:
+                NoseHoover();
                 break;
 
-                default:
-SCALING:
-                    for (auto && atom : atoms_) {
-                        atom.r += atom.p * DT * 0.5;
-                    }
-                    break;
-                }
+            case TempControlMethod::VELOCITY:
+                Woodcock_velocity_scaling();
+                break;
+
+            default:
+                BOOST_ASSERT(!"何かがおかしい！");
+                break;
             }
             break;
 
         default:
             BOOST_ASSERT(!"何かがおかしい！");
+            break;
+        }
+
+        for (auto && atom : atoms_) {
+            atom.r += atom.p * DT * 0.5;
+        }
+    }
+
+    void Ar_moleculardynamics::NoseHoover()
+    {
+        auto const tau = 0.1;
+        zeta_ += (Tc_ - Tg_) / (tau * tau) * DT;
+
+        for (auto && atom : atoms_){
+            atom.p -= atom.p * zeta_ * DT;
         }
     }
 

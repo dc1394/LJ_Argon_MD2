@@ -574,11 +574,15 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
         break;
 
     case IDC_RADIOC:
-        armd.tempcon(moleculardynamics::TempControlType::LANGEVIN);
+        armd.setTempContMethod(moleculardynamics::TempControlMethod::LANGEVIN);
+        break;
+
+    case IDC_RADIOD:
+        armd.setTempContMethod(moleculardynamics::TempControlMethod::NOSE_HOOVER);
         break;
 
     case IDC_RADIOE:
-        armd.tempcon(moleculardynamics::TempControlType::VELOCITY);
+        armd.setTempContMethod(moleculardynamics::TempControlMethod::VELOCITY);
         break;
 
     default:
@@ -829,12 +833,13 @@ void SetUI()
         moleculardynamics::Ar_moleculardynamics::FIRSTNC);
 
     // アンサンブルの変更
-    g_HUD.AddRadioButton(IDC_RADIOA, 1, L"NVTアンサンブル", 35, iY += 40, 125, 22, true, L'1');
-    g_HUD.AddRadioButton(IDC_RADIOB, 1, L"NVEアンサンブル", 35, iY += 28, 125, 22, false, L'2');
+    g_HUD.AddRadioButton(IDC_RADIOA, 1, L"NVTアンサンブル", 35, iY += 40, 125, 22, true);
+    g_HUD.AddRadioButton(IDC_RADIOB, 1, L"NVEアンサンブル", 35, iY += 28, 125, 22, false);
 
     // 温度制御法の変更
-    g_HUD.AddRadioButton(IDC_RADIOC, 1, L"Langevin法", 35, iY += 40, 125, 22, false, L'3');
-    g_HUD.AddRadioButton(IDC_RADIOE, 1, L"速度スケーリング法", 35, iY += 28, 125, 22, true, L'4');
+    g_HUD.AddRadioButton(IDC_RADIOC, 2, L"Langevin法", 35, iY += 40, 125, 22, false);
+    g_HUD.AddRadioButton(IDC_RADIOD, 2, L"Nose-Hoover法", 35, iY += 28, 125, 22, false);
+    g_HUD.AddRadioButton(IDC_RADIOE, 2, L"速度スケーリング法", 35, iY += 28, 125, 22, true);
 }
 
 //--------------------------------------------------------------------------------------
