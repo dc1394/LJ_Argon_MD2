@@ -1,14 +1,15 @@
-﻿/*! \file systemparam.h
-    \brief アルゴンに対して、分子動力学シミュレーションを行うクラスの宣言
+﻿/*! \file systemparam.cpp
+    \brief メッシュリストクラスの実装
 
-    Copyright ©  2017 @dc1394 All Rights Reserved.
+    Copyright © 2017 @dc1394 All Rights Reserved.
+    (but this is originally adapted by @kaityo256 for meshlist.cpp from https://github.com/kaityo256/mdstep/tree/master/step3 )
     This software is released under the BSD 2-Clause License.
 */
 
 #include "systemparam.h"
 
 namespace moleculardynamics {
-    // #region static public 定数
+    // #region publicメンバ変数 
 
     double const SystemParam::MARGIN = 0.75;
     
@@ -16,5 +17,5 @@ namespace moleculardynamics {
     
     double const SystemParam::RCUTOFF = 2.5;
 
-    // #endregion static public 定数
+    // #endregion publicメンバ変数
 }

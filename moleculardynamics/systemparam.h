@@ -55,19 +55,19 @@ namespace moleculardynamics {
 
         // #region publicメンバ変数
 
-        //! A static public member variable (constant).
+        //! A public member variable (static constant).
         /*!
             マージン
         */
         static double const MARGIN;
 
-        //! A private member variable (constant).
+        //! A public member variable (static constant).
         /*!
             マージンと、マージンのカットオフの和の平方
         */
         static double const ML2;
 
-        //! A static public member variable (constant).
+        //! A public member variable (static constant).
         /*!
             カットオフ半径
         */

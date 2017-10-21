@@ -16,11 +16,11 @@
 #include <boost/range/algorithm.hpp>    // for boost::generate
 
 namespace myrandom {
-    //! A class.
+    template <typename Distribution>
+    //! A template class.
     /*!
         自作乱数クラス
     */
-    template <typename Distribution>
     class MyRand final {
         // #region コンストラクタ・デストラクタ
 

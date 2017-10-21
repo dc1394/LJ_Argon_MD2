@@ -293,7 +293,7 @@ namespace moleculardynamics {
 
         // #endregion プロパティ
 
-        // #region メンバ変数
+        // #region publicメンバ変数
 
     public:
         //! A public member variable (static constant).
@@ -325,6 +325,10 @@ namespace moleculardynamics {
             アルゴン原子のVan der Waals半径
         */
         static double const VDW_RADIUS;
+
+        // #endregion publicメンバ変数
+
+        // #region privateメンバ変数
 
     private:
         //! A private member variable (static constant).
@@ -381,7 +385,7 @@ namespace moleculardynamics {
         */
         static double const YPSILON;
 
-        //! A private member variable (static constant).
+        //! A private member variable.
         /*!
             スーパーセルの個数
         */
@@ -543,7 +547,7 @@ namespace moleculardynamics {
         */
         double const Vrc_;
 
-        // #endregion メンバ変数
+        // #endregion privateメンバ変数
 
         // #region 禁止されたコンストラクタ・メンバ関数
 
