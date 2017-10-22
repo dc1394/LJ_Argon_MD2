@@ -17,7 +17,7 @@
 
 namespace utility {
     template <typename T>
-    //! A function.
+    //! A template function.
     /*!
         関数が成功したかどうかを判断する
         \tparam T 関数の戻り値の型
@@ -26,7 +26,7 @@ namespace utility {
     void v_return(T const & x);
 
     template <typename T>
-    //! A struct.
+    //! A template struct.
     /*!
         リソースを安全に解放するクラス
         \tparam T リソースの型
@@ -46,7 +46,7 @@ namespace utility {
     };
 
     template <typename T>
-    //! A struct.
+    //! A template struct.
     /*!
         確保したメモリを安全に解放するクラス
         \tparam T 確保したメモリの型

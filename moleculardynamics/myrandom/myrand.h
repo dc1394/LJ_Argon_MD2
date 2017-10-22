@@ -20,6 +20,7 @@ namespace myrandom {
     //! A template class.
     /*!
         自作乱数クラス
+        \tparam Distribution 乱数分布クラス
     */
     class MyRand final {
         // #region コンストラクタ・デストラクタ

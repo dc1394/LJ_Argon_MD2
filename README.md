@@ -1,28 +1,25 @@
 ﻿================================================================================
-【 ソフト名 】LJ_Argon_MD
+【 ソフト名 】LJ_Argon_MD2
 【  作成者  】@dc1394
 ================================================================================
 
 ★これは何？
 　アルゴンについて、リアルタイム古典分子動力学シミュレーションを行うコードです。
+　このコードは、ロボ太（@kaityo256）様の、分子動力学法ステップ・バイ・ステップ
+　（ https://github.com/kaityo256/mdstep ）を参考にさせて頂いています。
 　ビルドには、以下のライブラリが必要です。
 　・Boost C++ Libraries
 　・DirectX SDK (June 2010)
-　・Intel® Threading Building Blocks (Intel® TBB)
+　・Eigen
 
 ★更新履歴
-　2015/9/7  ver.0.1   とりあえず公開。
-　2015/9/29 ver.0.11  ボトルネックになっている部分をinline関数にして、またスタテ
-　ィックリンクするようにした。
-　2015/10/1 ver.0.12　エネルギーを計算するようにした。
-　2016/7/6  ver.0.13　圧力を計算するようにした。
-　2016/7/7  ver.0.14　アンサンブルを選べるようにした。
+　2017/10/21  ver.0.1　大幅に改良して公開。
 
 ★ライセンス
 　このソフトはフリーソフトウェアです（2条項BSDライセンス）。
 --------------------------------------------------------------------------------
-　LJ_Argon_MD
-　Copyright (C) 2015 @dc1394
+　LJ_Argon_MD2
+　Copyright (C) 2017 @dc1394
 
 　ソースコード形式であれバイナリ形式であれ、変更の有無に関わらず、以下の条件を満
 　たす限りにおいて、再配布および利用を許可します。
@@ -43,7 +40,7 @@
 　な損害、特別損害、懲罰的損害または結果損害のいずれに対しても一切責任を負いませ
 　ん。
 
-  Copyright (c) 2015, @dc1394
+  Copyright (c) 2017, @dc1394
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -68,7 +65,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------------------
 
-　LJ_Argon_MDにはMicrosoft社によるDXUTライブラリを使用しています。
+　LJ_Argon_MD2にはMicrosoft社によるDXUTライブラリを使用しています。
 　こちらのライセンスは以下になります。
 
 /*
@@ -151,7 +148,7 @@ Elle s’applique également, même si Microsoft connaissait ou devrait connaît
 EFFET JURIDIQUE.  Le présent contrat décrit certains droits juridiques. Vous pourriez avoir d’autres droits prévus par les lois de votre pays.  Le présent contrat ne modifie pas les droits que vous confèrent les lois de votre pays si celles-ci ne le permettent pas.
 */
 
-  LJ_Argon_MDにはBoostコミュニティによるBoost C++ Librariesを使用しています。
+  LJ_Argon_MD2にはBoostコミュニティによるBoost C++ Librariesを使用しています。
   こちらのライセンスは Boostライセンス になります。
 
 /* Boost Software License - Version 1.0 - August 17th, 2003
@@ -179,6 +176,5 @@ EFFET JURIDIQUE.  Le présent contrat décrit certains droits juridiques. Vous p
 * DEALINGS IN THE SOFTWARE.
 */
 
-  LJ_Argon_MDには®Intel CorpolationによるIntel® Threading Building Blocks
-　(Intel® TBB)を使用しています。
-　こちらのライセンスは GNU General Public License, version 2 になります。
+  LJ_Argon_MD2にはEigen projectによるEigenを使用しています。
+　こちらのライセンスは MPL2 になります。

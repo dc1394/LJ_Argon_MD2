@@ -263,14 +263,16 @@ struct SimpleVertex
 #define IDC_OUTPUT              4
 #define IDC_OUTPUT2             5
 #define IDC_OUTPUT3             6
-#define IDC_SLIDER              7
-#define IDC_SLIDER2             8
-#define IDC_SLIDER3             9
-#define IDC_RADIOA              10
-#define IDC_RADIOB              11
-#define IDC_RADIOC              12
-#define IDC_RADIOD              13
-#define IDC_RADIOE              14
+#define IDC_OUTPUT4             7
+#define IDC_OUTPUT5             8
+#define IDC_SLIDER              9
+#define IDC_SLIDER2             10
+#define IDC_SLIDER3             11
+#define IDC_RADIOA              12
+#define IDC_RADIOB              13
+#define IDC_RADIOC              14
+#define IDC_RADIOD              15
+#define IDC_RADIOE              16
 
 //--------------------------------------------------------------------------------------
 // Initialize the app 
@@ -491,7 +493,7 @@ HRESULT CALLBACK OnD3D10CreateDevice( ID3D10Device* pd3dDevice, const DXGI_SURFA
     RenderBox(pd3dDevice);
     CreateSphereMesh(pd3dDevice);
 
-    D3DXVECTOR3 vEye(0.0f, 10.0f, 10.0f);
+    D3DXVECTOR3 vEye(0.0f, 115.0f, 115.0f);
     D3DXVECTOR3 vLook(0.0f, 0.0f, 0.0f);
     D3DXVECTOR3 const Up(0.0f, 1.0f, 0.0f);
     D3DXMatrixLookAtLH(&g_View, &vEye, &vLook, &Up);
@@ -803,7 +805,7 @@ void SetUI()
         125,
         22,
         1,
-        5000,
+        3000,
         boost::numeric_cast<int>(moleculardynamics::Ar_moleculardynamics::FIRSTTEMP));
 
     // 格子定数の変更
@@ -833,11 +835,15 @@ void SetUI()
         moleculardynamics::Ar_moleculardynamics::FIRSTNC);
 
     // アンサンブルの変更
-    g_HUD.AddRadioButton(IDC_RADIOA, 1, L"NVTアンサンブル", 35, iY += 40, 125, 22, true);
+    g_HUD.AddStatic(IDC_OUTPUT4, L"アンサンブル", 20, iY += 40, 125, 22);
+    g_HUD.GetStatic(IDC_OUTPUT4)->SetTextColor(D3DCOLOR_ARGB(255, 255, 255, 255));
+    g_HUD.AddRadioButton(IDC_RADIOA, 1, L"NVTアンサンブル", 35, iY += 24, 125, 22, true);
     g_HUD.AddRadioButton(IDC_RADIOB, 1, L"NVEアンサンブル", 35, iY += 28, 125, 22, false);
 
     // 温度制御法の変更
-    g_HUD.AddRadioButton(IDC_RADIOC, 2, L"Langevin法", 35, iY += 40, 125, 22, false);
+    g_HUD.AddStatic(IDC_OUTPUT4, L"温度制御の方法", 20, iY += 40, 125, 22);
+    g_HUD.GetStatic(IDC_OUTPUT4)->SetTextColor(D3DCOLOR_ARGB(255, 255, 255, 255));
+    g_HUD.AddRadioButton(IDC_RADIOC, 2, L"Langevin法", 35, iY += 24, 125, 22, false);
     g_HUD.AddRadioButton(IDC_RADIOD, 2, L"Nose-Hoover法", 35, iY += 28, 125, 22, false);
     g_HUD.AddRadioButton(IDC_RADIOE, 2, L"速度スケーリング法", 35, iY += 28, 125, 22, true);
 }
