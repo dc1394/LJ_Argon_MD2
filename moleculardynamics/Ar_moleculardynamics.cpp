@@ -198,30 +198,73 @@ namespace moleculardynamics {
         // ビリアルの初期化
         virial_ = 0.0;
 
-        for (auto k = 0; k < pairs_.size(); ++k) {
-            auto const i = pairs_[k].first;
-            auto const j = pairs_[k].second;
-            Eigen::Vector4d d = atoms_[j].r - atoms_[i].r;
+        auto const number_of_pairs = pairs_.size();
+        std::int32_t i, j;
+        Eigen::Vector4d d;
+        double r2, r6, df;
+
+        if (number_of_pairs) {
+            i = pairs_[0].first;
+            j = pairs_[0].second;
+            d = atoms_[j].r - atoms_[i].r;
 
             SystemParam::adjust_periodic(d, periodiclen_);
-            auto const r2 = d.squaredNorm();
+            r2 = d.squaredNorm();
+        }
 
-            if (r2 <= rc2_) {
-                auto const r6 = r2 * r2 * r2;
-                auto const dFdr = (24.0 * r6 - 48.0) / (r6 * r6 * r2);
+        for (auto k = 1; k < number_of_pairs; ++k) {
+            i = pairs_[k].first;
+            j = pairs_[k].second;
+            d = atoms_[j].r - atoms_[i].r;
 
-                atoms_[i].f += dFdr * d;
-                atoms_[j].f -= dFdr * d;
+            SystemParam::adjust_periodic(d, periodiclen_);
+            r2 = d.squaredNorm();
+            
+            r6 = r2 * r2 * r2;
+            auto const dFdr = (24.0 * r6 - 48.0) / (r6 * r6 * r2);
+            df = dFdr * DT;
 
-                auto const df = dFdr * DT;
-
-                atoms_[i].p += df * d;
-                atoms_[j].p -= df * d;
-
-                auto const r12 = r6 * r6;
-                Up_ += 4.0 * (1.0 / r12 - 1.0 / r6) + Vrc_;
-                virial_ += r2 * dFdr;
+            if (r2 > rc2_) {
+                df = 0.0;
             }
+            
+            atoms_[i].f += dFdr * d;
+            atoms_[j].f -= dFdr * d;
+
+            atoms_[i].p += df * d;
+            atoms_[j].p -= df * d;
+
+            auto const r12 = r6 * r6;
+            Up_ += 4.0 * (1.0 / r12 - 1.0 / r6) + Vrc_;
+            virial_ += r2 * dFdr;
+
+            i = pairs_[k].first;
+            j = pairs_[k].second;
+            d = atoms_[j].r - atoms_[i].r;
+
+            SystemParam::adjust_periodic(d, periodiclen_);
+        }
+
+        if (number_of_pairs) {
+            r2 = d.squaredNorm();
+
+            r6 = r2 * r2 * r2;
+            auto const dFdr = (24.0 * r6 - 48.0) / (r6 * r6 * r2);
+            df = dFdr * DT;
+
+            if (r2 > rc2_) {
+                df = 0.0;
+            }
+
+            atoms_[i].f += dFdr * d;
+            atoms_[j].f -= dFdr * d;
+
+            atoms_[i].p += df * d;
+            atoms_[j].p -= df * d;
+
+            auto const r12 = r6 * r6;
+            Up_ += 4.0 * (1.0 / r12 - 1.0 / r6) + Vrc_;
+            virial_ += r2 * dFdr;
         }
     }
 
