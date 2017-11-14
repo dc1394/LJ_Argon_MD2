@@ -9,6 +9,7 @@
 #include "myrandom/myrand.h"
 #include <cmath>                    // for std::sqrt, std::pow
 #include <random>                   // for std::uniform_real_distribution
+#include <dvec.h>
 
 namespace moleculardynamics {
     // #region static private 定数
@@ -187,6 +188,8 @@ namespace moleculardynamics {
 
     void Ar_moleculardynamics::calcForcePair()
     {
+        //typedef boost::simd::pack<double, 4> pack_t;
+
         // 各原子に働く力の初期化
         for (auto && a : atoms_) {
             a.f = Eigen::Vector4d::Zero();
@@ -199,68 +202,87 @@ namespace moleculardynamics {
         virial_ = 0.0;
 
         auto const number_of_pairs = pairs_.size();
-        std::int32_t i, j;
-        Eigen::Vector4d d;
-        double r2, r6, df;
+        std::int32_t i_a, i_b, j_a, j_b;
+        Eigen::Vector4d d_a, d_b;
 
         if (number_of_pairs) {
-            i = pairs_[0].first;
-            j = pairs_[0].second;
-            d = atoms_[j].r - atoms_[i].r;
+            auto const vzero = F64vec4(0.0, 0.0, 0.0, 0.0);
+            auto const vcl2 = F64vec4(rc2_, rc2_, rc2_, rc2_);
+            auto const vc24 = F64vec4(24 * DT, 24 * DT, 24 * DT, 24 * DT);
+            auto const vc48 = F64vec4(48 * DT, 48 * DT, 48 * DT, 48 * DT);
 
-            SystemParam::adjust_periodic(d, periodiclen_);
-            r2 = d.squaredNorm();
+            auto i_a1 = pairs_[0].first;
+            auto j_a1 = pairs_[0].second;
+            auto i_a2 = pairs_[1].first;
+            auto j_a2 = pairs_[1].second;
+            auto i_a3 = pairs_[2].first;
+            auto j_a3 = pairs_[2].second;
+            auto i_a4 = pairs_[3].first;
+            auto j_a4 = pairs_[3].second;
+
+            auto d_b1 = atoms_[j_a1].r - atoms_[i_a1].r;
+            auto vqi_a1 = F64vec4(_mm256_load_pd(atoms_[i_a1].r.data()));
+            auto vqj_a1 = F64vec4(_mm256_load_pd(atoms_[j_a1].r.data()));
+            auto vdq_b1 = vqj_a1 - vqi_a1;
+
+            i_a = pairs_[0].first;
+            j_a = pairs_[0].second;
+            d_b = atoms_[j_a].r - atoms_[i_a].r;
+            SystemParam::adjust_periodic(d_b, periodiclen_);
+
+            
         }
 
         for (auto k = 1; k < number_of_pairs; ++k) {
-            i = pairs_[k].first;
-            j = pairs_[k].second;
-            d = atoms_[j].r - atoms_[i].r;
+            d_a = d_b;
 
-            SystemParam::adjust_periodic(d, periodiclen_);
-            r2 = d.squaredNorm();
+            i_b = pairs_[k].first;
+            j_b = pairs_[k].second;
+            d_b = atoms_[j_b].r - atoms_[i_b].r;
+
+            SystemParam::adjust_periodic(d_b, periodiclen_);
+            auto const r2 = d_a.squaredNorm();
             
-            r6 = r2 * r2 * r2;
+            auto const r6 = r2 * r2 * r2;
             auto const dFdr = (24.0 * r6 - 48.0) / (r6 * r6 * r2);
-            df = dFdr * DT;
+            auto df = dFdr * DT;
 
             if (r2 > rc2_) {
                 df = 0.0;
             }
             
-            atoms_[i].f += dFdr * d;
-            atoms_[j].f -= dFdr * d;
+            atoms_[i_a].f += dFdr * d_a;
+            atoms_[j_a].f -= dFdr * d_a;
 
-            atoms_[i].p += df * d;
-            atoms_[j].p -= df * d;
+            atoms_[i_a].p += df * d_a;
+            atoms_[j_a].p -= df * d_a;
 
             auto const r12 = r6 * r6;
             Up_ += 4.0 * (1.0 / r12 - 1.0 / r6) + Vrc_;
             virial_ += r2 * dFdr;
 
-            i = pairs_[k].first;
-            j = pairs_[k].second;
-            d = atoms_[j].r - atoms_[i].r;
-
-            SystemParam::adjust_periodic(d, periodiclen_);
+            i_a = i_b;
+            j_a = j_b;
         }
 
         if (number_of_pairs) {
-            r2 = d.squaredNorm();
+            d_a = d_b;
 
-            r6 = r2 * r2 * r2;
+            auto const r2 = d_a.squaredNorm();
+
+            auto const r6 = r2 * r2 * r2;
             auto const dFdr = (24.0 * r6 - 48.0) / (r6 * r6 * r2);
-            df = dFdr * DT;
+            auto df = dFdr * DT;
 
             if (r2 > rc2_) {
                 df = 0.0;
             }
 
-            atoms_[i].f += dFdr * d;
-            atoms_[j].f -= dFdr * d;
+            atoms_[i_a].f += dFdr * d_a;
+            atoms_[j_a].f -= dFdr * d_a;
 
-            atoms_[i].p += df * d;
-            atoms_[j].p -= df * d;
+            atoms_[i_a].p += df * d_a;
+            atoms_[j_a].p -= df * d_a;
 
             auto const r12 = r6 * r6;
             Up_ += 4.0 * (1.0 / r12 - 1.0 / r6) + Vrc_;
